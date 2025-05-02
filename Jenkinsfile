@@ -16,14 +16,14 @@ pipeline {
         stage('Checkout Terraform Repo') {
             steps {
                 dir('terraform') {
-git url: 'https://github.com/thakare-priyanka/terraform-jenkins', branch: 'master'
+git url: 'https://github.com/thakare-priyanka/terraform-jenkins', branch: 'main'
                 }
             }
         }
  
         stage('Terraform Init') {
             steps {
-                dir('terraform/terraform') {
+                dir('terraform') {
                     bat 'terraform init'
                 }
             }
@@ -43,7 +43,7 @@ git url: 'https://github.com/thakare-priyanka/terraform-jenkins', branch: 'maste
                 expression { currentBuild.currentResult == 'SUCCESS' }
             }
             steps {
-                dir('terraform/terraform') {
+                dir('terraform') {
                     bat 'terraform apply -auto-approve'
                 }
             }
