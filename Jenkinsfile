@@ -1,49 +1,42 @@
 pipeline {
     agent any
  
-    environment {
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key')    // Replace with your Jenkins credential ID
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key') // Replace with your Jenkins credential ID
-    }
- 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
-                checkout scm
+                echo 'Cloning repository...'
+git url: 'https://github.com/thakare-priyanka/terraform-jenkins', branch: 'main'
             }
         }
  
-        stage('Checkout Terraform Repo') {
+        stage('Init Terraform') {
             steps {
                 dir('terraform') {
-git url: 'https://github.com/yeshwanthlm/Terraform-Jenkins.git', branch: 'master'
-                }
-            }
-        }
- 
-        stage('Terraform Init') {
-            steps {
-                dir('terraform/terraform') {
+                    echo 'Running terraform init...'
                     bat 'terraform init'
                 }
             }
         }
  
-        stage('Approval') {
-            when {
-                expression { currentBuild.currentResult == 'SUCCESS' }
-            }
+        stage('Plan Terraform') {
             steps {
-                input message: 'Do you want to proceed with Apply?', ok: 'Yes'
+                dir('terraform') {
+                    echo 'Running terraform plan...'
+                    bat 'terraform plan'
+                }
             }
         }
  
-        stage('Apply') {
-            when {
-                expression { currentBuild.currentResult == 'SUCCESS' }
-            }
+        stage('Approval') {
             steps {
-                dir('terraform/terraform') {
+                input message: 'Do you want to apply the Terraform changes?'
+            }
+        }
+ 
+        stage('Apply Terraform') {
+            steps {
+                dir('terraform') {
+                    echo 'Applying terraform changes...'
                     bat 'terraform apply -auto-approve'
                 }
             }
