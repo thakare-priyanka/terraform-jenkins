@@ -1,54 +1,52 @@
 pipeline {
-
-    parameters {
-        booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
-    } 
+    agent any
+ 
     environment {
-        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
-        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')    // Replace with your Jenkins credential ID
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key') // Replace with your Jenkins credential ID
     }
-
-   agent  any
+ 
     stages {
-        stage('checkout') {
+        stage('Checkout SCM') {
             steps {
-                 script{
-                        dir("terraform")
-                        {
-                            git "https://github.com/yeshwanthlm/Terraform-Jenkins.git"
-                        }
-                    }
+                checkout scm
+            }
+        }
+ 
+        stage('Checkout Terraform Repo') {
+            steps {
+                dir('terraform') {
+git url: 'https://github.com/yeshwanthlm/Terraform-Jenkins.git', branch: 'master'
                 }
             }
-
-        stage('Plan') {
+        }
+ 
+        stage('Terraform Init') {
             steps {
-                bat 'pwd;cd terraform/ ; terraform init'
-                bat "pwd;cd terraform/ ; terraform plan -out tfplan"
-                bat 'pwd;cd terraform/ ; terraform show -no-color tfplan > tfplan.txt'
+                dir('terraform/terraform') {
+                    bat 'terraform init'
+                }
             }
         }
+ 
         stage('Approval') {
-           when {
-               not {
-                   equals expected: true, actual: params.autoApprove
-               }
-           }
-
-           steps {
-               script {
-                    def plan = readFile 'terraform/tfplan.txt'
-                    input message: "Do you want to apply the plan?",
-                    parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
-               }
-           }
-       }
-
-        stage('Apply') {
+            when {
+                expression { currentBuild.currentResult == 'SUCCESS' }
+            }
             steps {
-                bat "pwd;cd terraform/ ; terraform apply -input=false tfplan"
+                input message: 'Do you want to proceed with Apply?', ok: 'Yes'
+            }
+        }
+ 
+        stage('Apply') {
+            when {
+                expression { currentBuild.currentResult == 'SUCCESS' }
+            }
+            steps {
+                dir('terraform/terraform') {
+                    bat 'terraform apply -auto-approve'
+                }
             }
         }
     }
-
-  }
+}
