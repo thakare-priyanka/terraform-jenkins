@@ -16,7 +16,7 @@ pipeline {
         stage('Checkout Terraform Repo') {
             steps {
                 dir('terraform') {
-git url: 'https://github.com/thakare-priyanka/terraform-jenkins', branch: 'main'
+git url: 'https://github.com/thakare-priyanka/terraform-jenkinss', branch: 'main'
                 }
             }
         }
